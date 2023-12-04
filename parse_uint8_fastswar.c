@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <limits.h>
+#include <stdarg.h>
 
 typedef int parse_fn(const char*, size_t, uint8_t*);
 
@@ -35,9 +36,12 @@ static int parse_uint8_fastswar_bob(const char *str, size_t len, uint8_t *num) {
   return all_digits && ((len ^ 3) < 3) && __builtin_bswap32(digits) <= 0x020505ff;
 }
 
-static void error(char *str, size_t len, const char* fmt, int val) {
-    printf("%hhX %hhX %hhX %hhX, len %zu: ", str[0], str[1], str[2], str[3], len);
-    printf(fmt, val);
+static void error(char *str, size_t len, const char* fmt, ...) {
+    printf("%02hhX %02hhX %02hhX %02hhX, len %zu: ", str[0], str[1], str[2], str[3], len);
+    va_list args;
+    va_start(args, fmt);
+    vprintf(fmt, args);
+    va_end(args);
     printf("\n");
 }
 
@@ -47,6 +51,7 @@ static void check(char *str, size_t len, int want, int got) {
     }
     else {
         if (got < 0) error(str, len, "expected %d, got error", want);
+        if (got != want) error(str, len, "expected %d, got %d", want, got);
     }
 }
 
