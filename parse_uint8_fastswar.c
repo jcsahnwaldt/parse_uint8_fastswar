@@ -55,13 +55,13 @@ static void check(char *str, size_t len, int want, int got) {
   }
 }
 
-static void test_rec(parse_fn fn, char *str, size_t len, int want, size_t i) {
+static void test_rec(parse_fn fn, char *str, size_t len, size_t i, int want) {
   if (i < len) {
     want *= 10;
     for (char c = CHAR_MIN; ; c++) {
       str[i] = c;
       int w = c < '0' || c > '9' ? -1 : want + c - '0';
-      test_rec(fn, str, len, w, i + 1);
+      test_rec(fn, str, len, i + 1, w);
       if (c == CHAR_MAX) break;
     }
   }
