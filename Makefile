@@ -4,11 +4,10 @@ FILE := parse_uint8_fastswar
 # CC := clang-17
 CFLAGS := -std=c17 -O3 -Wall -Wextra -Wpedantic -Wconversion
 
-run_$(FILE): $(FILE)
-	./$(FILE)
-
 $(FILE): $(FILE).c
 
+run_$(FILE): $(FILE)
+	./$(FILE)
 
 clean:
 	$(RM) $(FILE)
