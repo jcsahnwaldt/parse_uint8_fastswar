@@ -6,17 +6,17 @@
 
 static int parse_uint8_fastswar(const char *str, size_t len, uint8_t *num) {
   if (len == 0 || len > 3) { return 0; }
-  union { uint8_t as_str[4]; uint32_t as_int; } digits;
-  memcpy(&digits.as_int, str, sizeof(digits));
-  digits.as_int ^= 0x30303030lu;
-  digits.as_int <<= ((4 - len) * 8);
+  uint32_t digits;
+  memcpy(&digits, str, sizeof(digits));
+  digits ^= 0x30303030lu;
+  digits <<= ((4 - len) * 8);
 #if 1
-  uint32_t all_digits = ((digits.as_int | (0x06060606 + digits.as_int)) & 0xF0F0F0F0) == 0;
+  uint32_t all_digits = ((digits | (0x06060606 + digits)) & 0xF0F0F0F0) == 0;
 #else
-  uint32_t all_digits = ((0x06060606 + digits.as_int) & 0xF0F0F0F0) == 0;
+  uint32_t all_digits = ((0x06060606 + digits) & 0xF0F0F0F0) == 0;
 #endif
-  *num = (uint8_t)((0x640a01 * digits.as_int) >> 24);
-  return all_digits & ((__builtin_bswap32(digits.as_int) <= 0x020505));
+  *num = (uint8_t)((0x640a01 * digits) >> 24);
+  return all_digits & ((__builtin_bswap32(digits) <= 0x020505));
 }
 
 static void error(char *str, size_t len, const char* fmt, int val) {
