@@ -37,50 +37,50 @@ static int parse_uint8_fastswar_bob(const char *str, size_t len, uint8_t *num) {
 }
 
 static void error(char *str, size_t len, const char* fmt, ...) {
-    printf("%02hhX %02hhX %02hhX %02hhX, len %zu: ", str[0], str[1], str[2], str[3], len);
-    va_list args;
-    va_start(args, fmt);
-    vprintf(fmt, args);
-    va_end(args);
-    printf("\n");
+  printf("%02hhX %02hhX %02hhX %02hhX, len %zu: ", str[0], str[1], str[2], str[3], len);
+  va_list args;
+  va_start(args, fmt);
+  vprintf(fmt, args);
+  va_end(args);
+  printf("\n");
 }
 
 static void check(char *str, size_t len, int want, int got) {
-    if (want < 0 || want > 255) {
-        if (got >= 0) error(str, len, "expected error, got %d", got);
-    }
-    else {
-        if (got < 0) error(str, len, "expected %d, got error", want);
-        if (got != want) error(str, len, "expected %d, got %d", want, got);
-    }
+  if (want < 0 || want > 255) {
+    if (got >= 0) error(str, len, "expected error, got %d", got);
+  }
+  else {
+    if (got < 0) error(str, len, "expected %d, got error", want);
+    if (got != want) error(str, len, "expected %d, got %d", want, got);
+  }
 }
 
 static void test_rec(parse_fn fn, char *str, size_t len, int want, size_t i) {
-    if (i < len) {
-        want *= 10;
-        for (char c = CHAR_MIN; ; c++) {
-            str[i] = c;
-            int w = c < '0' || c > '9' ? -1 : want + c - '0';
-            test_rec(fn, str, len, w, i + 1);
-            if (c == CHAR_MAX) break;
-        }
+  if (i < len) {
+    want *= 10;
+    for (char c = CHAR_MIN; ; c++) {
+      str[i] = c;
+      int w = c < '0' || c > '9' ? -1 : want + c - '0';
+      test_rec(fn, str, len, w, i + 1);
+      if (c == CHAR_MAX) break;
     }
-    else {
-        uint8_t got;
-        int ok = fn(str, len, &got);
-        check(str, len, want, ok ? got : -1);
-    }
+  }
+  else {
+    uint8_t got;
+    int ok = fn(str, len, &got);
+    check(str, len, want, ok ? got : -1);
+  }
 }
 
 static void test(parse_fn fn, const char* name) {
-    printf("testing %s\n", name);
-    char str[4] = {0};
-    test_rec(fn, str, 1, 0, 0);
-    test_rec(fn, str, 2, 0, 0);
-    test_rec(fn, str, 3, 0, 0);
+  printf("testing %s\n", name);
+  char str[4] = {0};
+  test_rec(fn, str, 1, 0, 0);
+  test_rec(fn, str, 2, 0, 0);
+  test_rec(fn, str, 3, 0, 0);
 }
 
 int main(void) {
-    test(parse_uint8_fastswar, "parse_uint8_fastswar");
-    test(parse_uint8_fastswar_bob, "parse_uint8_fastswar_bob");
+  test(parse_uint8_fastswar, "parse_uint8_fastswar");
+  test(parse_uint8_fastswar_bob, "parse_uint8_fastswar_bob");
 }
