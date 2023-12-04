@@ -10,7 +10,7 @@ static int parse_uint8_fastswar(const char *str, size_t len, uint8_t *num) {
   memcpy(&digits.as_int, str, sizeof(digits));
   digits.as_int ^= 0x30303030lu;
   digits.as_int <<= ((4 - len) * 8);
-#if 0
+#if 1
   uint32_t all_digits = ((digits.as_int | (0x06060606 + digits.as_int)) & 0xF0F0F0F0) == 0;
 #else
   uint32_t all_digits = ((0x06060606 + digits.as_int) & 0xF0F0F0F0) == 0;
@@ -23,6 +23,15 @@ static void error(char *str, size_t len, const char* fmt, int val) {
     printf("%hhX %hhX %hhX %hhX, len %zu: ", str[0], str[1], str[2], str[3], len);
     printf(fmt, val);
     printf("\n");
+}
+
+static void check(char *str, size_t len, int want, int got) {
+    if (want < 0 || want > 255) {
+        if (got >= 0) error(str, len, "expected error, got %d", got);
+    }
+    else {
+        if (got < 0) error(str, len, "expected %d, got error", want);
+    }
 }
 
 static void test(char *str, size_t len, int want, size_t i) {
@@ -38,12 +47,7 @@ static void test(char *str, size_t len, int want, size_t i) {
     else {
         uint8_t got;
         int ok = parse_uint8_fastswar(str, len, &got);
-        if (want < 0 || want > 255) {
-            if (ok) error(str, len, "expected error, got %d", got);
-        }
-        else {
-            if (!ok) error(str, len, "expected %d, got error", want);
-        }
+        check(str, len, want, ok ? got : -1);
     }
 }
 
