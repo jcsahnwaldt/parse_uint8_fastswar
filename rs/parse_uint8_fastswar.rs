@@ -1,38 +1,18 @@
-use std::ffi::c_void;
-use std::ptr::addr_of_mut;
-use std::mem::size_of;
 
-// according to godbolt.org, all of these functions generate
-// mov eax, dword ptr [rdi]
-
-fn foo(b: &[u8]) -> u32 {
-    let p = b.as_ptr() as *const u32;
-    unsafe { p.read_unaligned() }
-}
-
-extern "C" {
-    fn memcpy(dst: *mut c_void, src: *const c_void, count: usize) -> *mut c_void;
-}
-
-fn bar(b: &[u8]) -> u32 {
-    let mut i: u32 = 0;
-    unsafe {
-        memcpy(addr_of_mut!(i) as *mut c_void, b.as_ptr() as *const c_void, size_of::<u32>());
-    };
-    return i;
-}
-
-fn baz(b: &[u8]) -> u32 {
-    let mut i: u32 = 0;
-    unsafe {
-        std::ptr::copy_nonoverlapping(b.as_ptr() as *const u32, std::ptr::addr_of_mut!(i), 1);
-    }
-    return i;
+fn parse_uint8_fastswar(b: &[u8]) -> Option<u8> {
+  if b.len() == 0 || b.len() > 3 { return None; }
+  let p = b.as_ptr() as *const u32;
+  let mut digits = unsafe { p.read_unaligned() };
+  digits ^= 0x30303030;
+  digits <<= (4 - b.len()) * 8;
+  let num = ((digits.wrapping_mul(0x640a01)) >> 24) as u8;
+  let all_digits = ((digits | (digits.wrapping_add(0x06060606))) & 0xF0F0F0F0) == 0;
+  (all_digits && digits.swap_bytes() <= 0x020505).then_some(num)
 }
 
 fn main() {
-    let b: [u8; 4] = [1,2,3,4];
-    println!("{:X?}", foo(&b));
-    println!("{:X?}", bar(&b));
-    println!("{:X?}", baz(&b));
+  let b = "0\0\0\0".as_bytes();
+  println!("{:?}", parse_uint8_fastswar(&b[..1]));
+  let b = "255\0".as_bytes();
+  println!("{:?}", parse_uint8_fastswar(&b[..3]));
 }
