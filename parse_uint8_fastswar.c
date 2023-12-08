@@ -36,8 +36,16 @@ static int parse_uint8_fastswar_bob(const char *str, size_t len, uint8_t *num) {
   return all_digits && ((len ^ 3) < 3) && __builtin_bswap32(digits) <= 0x020505ff;
 }
 
-static void error(const char *str, size_t len, const char* fmt, ...) {
-  printf("%02hhX %02hhX %02hhX %02hhX, len %zu: ", str[0], str[1], str[2], str[3], len);
+typedef struct {
+  parse_fn* fn;
+  char str[4];
+  size_t len;
+  int want;
+} test_t;
+
+static void error(test_t* t, const char* fmt, ...) {
+  char* s = t->str;
+  printf("%02hhX %02hhX %02hhX %02hhX, len %zu: ", s[0], s[1], s[2], s[3], t->len);
   va_list args;
   va_start(args, fmt);
   vprintf(fmt, args);
@@ -45,36 +53,38 @@ static void error(const char *str, size_t len, const char* fmt, ...) {
   printf("\n");
 }
 
-static void check(parse_fn fn, char *str, size_t len, int want) {
+static void check(test_t* t) {
+  int want = t->want;
   uint8_t got;
-  int ok = fn(str, len, &got);
+  int ok = t->fn(t->str, t->len, &got);
   if (want < 0 || want > 255) {
-    if (ok) error(str, len, "expected error, got %d", got);
+    if (ok) error(t, "expected error, got %d", got);
   }
   else {
-    if (! ok) error(str, len, "expected %d, got error", want);
-    if (got != want) error(str, len, "expected %d, got %d", want, got);
+    if (! ok) error(t, "expected %d, got error", want);
+    else if (got != want) error(t, "expected %d, got %d", want, got);
   }
 }
 
-static void test_rec(parse_fn fn, char *str, size_t len, int want) {
-  want *= 10;
-  for (char c = CHAR_MIN; ; c++) {
-    str[len - 1] = c;
-    int w = c < '0' || c > '9' ? -1 : want + c - '0';
-    check(fn, str, len, w);
-    if (len < 3) test_rec(fn, str, len + 1, w);
-    if (c == CHAR_MAX) break;
+static void test_rec(test_t* t) {
+  size_t i = t->len++;
+  int want = t->want * 10;
+  for (int c = CHAR_MIN; c <= CHAR_MAX; c++) {
+    t->str[i] = (char)c;
+    t->want = c < '0' || c > '9' ? -1 : want + c - '0';
+    check(t);
+    if (i < 2) test_rec(t);
   }
+  t->len--;
 }
 
-static void test_all(parse_fn fn, const char* name) {
+static void test(parse_fn* fn, const char* name) {
   printf("testing %s\n", name);
-  char str[4] = {0};
-  test_rec(fn, str, 1, 0);
+  test_t t = {fn, {0}, 0, 0};
+  test_rec(&t);
 }
 
 int main(void) {
-  test_all(parse_uint8_fastswar, "parse_uint8_fastswar");
-  test_all(parse_uint8_fastswar_bob, "parse_uint8_fastswar_bob");
+  test(parse_uint8_fastswar, "parse_uint8_fastswar");
+  test(parse_uint8_fastswar_bob, "parse_uint8_fastswar_bob");
 }
