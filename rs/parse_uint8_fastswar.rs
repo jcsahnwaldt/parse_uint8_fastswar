@@ -13,9 +13,9 @@ fn parse_uint8_fastswar(b: &[u8]) -> Option<u8> {
 struct Test { str: [u8; 4], len: usize, want: i32 }
 
 macro_rules! error {
-  ($self:ident, $fmt:literal, $($arg:tt)*) => {
+  ($self:ident, $fmt:literal, $($args:expr),*) => {
     print!("{:X?}, len {}: ", &$self.str, $self.len);
-    println!($fmt, $($arg)*);
+    println!($fmt, $($args),*);
   };
 }
 
