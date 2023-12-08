@@ -7,7 +7,7 @@ CFLAGS := -std=c17 -O3 -Wall -Wextra -Wpedantic -Wconversion
 $(BIN): $(BIN).c
 
 run_$(BIN): $(BIN)
-	./$(BIN)
+	./$<
 
 clean:
 	$(RM) $(BIN)

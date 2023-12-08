@@ -6,7 +6,7 @@ BIN := parse_uint8_fastswar
 $(BIN): $(BIN).rs
 
 run_$(BIN): $(BIN)
-	./$(BIN)
+	./$<
 
 clean:
 	$(RM) $(BIN)
