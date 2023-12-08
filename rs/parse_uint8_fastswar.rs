@@ -10,9 +10,51 @@ fn parse_uint8_fastswar(b: &[u8]) -> Option<u8> {
   (all_digits && digits.swap_bytes() <= 0x020505).then_some(num)
 }
 
+struct Test { str: [u8; 4], len: usize, want: i32 }
+
+macro_rules! error {
+  ($self:ident, $fmt:literal, $($arg:tt)*) => {
+    print!("{:X?}, len {}: ", &$self.str, $self.len);
+    println!($fmt, $($arg)*);
+  };
+}
+
+impl Test {
+
+  fn new() -> Self {
+    Self { str: [0; 4], len: 0, want: 0 }
+  }
+
+  fn test_rec(&mut self) {
+    let i = self.len;
+    self.len += 1;
+    let want = self.want * 10;
+    for b in 0..=255 {
+      self.str[i] = b;
+      self.want =
+        if b < b'0' || b > b'9' { -1 }
+        else { want + (b - b'0') as i32 };
+      self.check();
+      if i < 2 { self.test_rec(); }
+    }
+    self.len -= 1;
+  }
+
+  fn check(&self) {
+    let want = self.want;
+    let got = parse_uint8_fastswar(&self.str[..self.len]).map_or(-1, i32::from);
+    if want < 0 || want > 255 {
+      if got >= 0 { error!(self, "expected error, got {}", got); }
+    }
+    else {
+      if got < 0 { error!(self, "expected {}, got error", want); }
+      else if got != want { error!(self, "expected {}, got {}", want, got); }
+    }
+  }
+
+}
+
 fn main() {
-  let b = "0\0\0\0".as_bytes();
-  println!("{:?}", parse_uint8_fastswar(&b[..1]));
-  let b = "255\0".as_bytes();
-  println!("{:?}", parse_uint8_fastswar(&b[..3]));
+  let mut t = Test::new();
+  t.test_rec();
 }
