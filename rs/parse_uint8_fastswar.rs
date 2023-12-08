@@ -37,6 +37,18 @@ impl Test {
     Self { fun, str: [0; 4], len: 0, want: 0 }
   }
 
+  fn check(&self) {
+    let want = self.want;
+    let got = (self.fun)(&self.str[..self.len]).map_or(-1, i32::from);
+    if want < 0 || want > 255 {
+      if got >= 0 { error!(self, "expected error, got {}", got); }
+    }
+    else {
+      if got < 0 { error!(self, "expected {}, got error", want); }
+      else if got != want { error!(self, "expected {}, got {}", want, got); }
+    }
+  }
+
   fn test_rec(&mut self) {
     let i = self.len;
     self.len += 1;
@@ -50,18 +62,6 @@ impl Test {
       if i < 2 { self.test_rec(); }
     }
     self.len -= 1;
-  }
-
-  fn check(&self) {
-    let want = self.want;
-    let got = (self.fun)(&self.str[..self.len]).map_or(-1, i32::from);
-    if want < 0 || want > 255 {
-      if got >= 0 { error!(self, "expected error, got {}", got); }
-    }
-    else {
-      if got < 0 { error!(self, "expected {}, got error", want); }
-      else if got != want { error!(self, "expected {}, got {}", want, got); }
-    }
   }
 
 }
