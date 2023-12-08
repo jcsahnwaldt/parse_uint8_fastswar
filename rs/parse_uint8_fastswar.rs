@@ -1,5 +1,5 @@
 use std::ffi::c_void;
-use std::ptr::addr_of;
+use std::ptr::addr_of_mut;
 use std::mem::size_of;
 
 // according to godbolt.org, all of these functions generate
@@ -15,17 +15,17 @@ extern "C" {
 }
 
 fn bar(b: &[u8]) -> u32 {
-    let i: u32 = 0;
+    let mut i: u32 = 0;
     unsafe {
-        memcpy(addr_of!(i) as *mut c_void, b.as_ptr() as *const c_void, size_of::<u32>());
+        memcpy(addr_of_mut!(i) as *mut c_void, b.as_ptr() as *const c_void, size_of::<u32>());
     };
     return i;
 }
 
 fn baz(b: &[u8]) -> u32 {
-    let i: u32 = 0;
+    let mut i: u32 = 0;
     unsafe {
-        std::ptr::copy_nonoverlapping(b.as_ptr(), std::ptr::addr_of!(i) as *mut u8, size_of::<u32>());
+        std::ptr::copy_nonoverlapping(b.as_ptr() as *const u32, std::ptr::addr_of_mut!(i), 1);
     }
     return i;
 }
