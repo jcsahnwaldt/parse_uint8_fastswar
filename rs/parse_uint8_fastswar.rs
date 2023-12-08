@@ -10,7 +10,19 @@ fn parse_uint8_fastswar(b: &[u8]) -> Option<u8> {
   (all_digits && digits.swap_bytes() <= 0x020505).then_some(num)
 }
 
-struct Test { str: [u8; 4], len: usize, want: i32 }
+fn parse_uint8_fastswar_bob(b: &[u8]) -> Option<u8> {
+  let p = b.as_ptr() as *const u32;
+  let mut digits = unsafe { p.read_unaligned() };
+  digits ^= 0x303030;
+  digits <<= (b.len() ^ 3) * 8;
+  let num = ((digits.wrapping_mul(0x640a01)) >> 16) as u8;
+  let all_digits = ((digits | (digits.wrapping_add(0x767676))) & 0x808080) == 0;
+  (all_digits && ((b.len() ^ 3) < 3) && digits.swap_bytes() <= 0x020505ff).then_some(num)
+}
+
+type Fun = fn(&[u8]) -> Option<u8>;
+
+struct Test { fun: Fun, str: [u8; 4], len: usize, want: i32 }
 
 macro_rules! error {
   ($self:ident, $fmt:literal, $($args:expr),*) => {
@@ -21,8 +33,8 @@ macro_rules! error {
 
 impl Test {
 
-  fn new() -> Self {
-    Self { str: [0; 4], len: 0, want: 0 }
+  fn new(fun: Fun) -> Self {
+    Self { fun, str: [0; 4], len: 0, want: 0 }
   }
 
   fn test_rec(&mut self) {
@@ -42,7 +54,7 @@ impl Test {
 
   fn check(&self) {
     let want = self.want;
-    let got = parse_uint8_fastswar(&self.str[..self.len]).map_or(-1, i32::from);
+    let got = (self.fun)(&self.str[..self.len]).map_or(-1, i32::from);
     if want < 0 || want > 255 {
       if got >= 0 { error!(self, "expected error, got {}", got); }
     }
@@ -54,7 +66,13 @@ impl Test {
 
 }
 
-fn main() {
-  let mut t = Test::new();
+fn test(fun: Fun, name: &str) {
+  println!("testing {}", name);
+  let mut t = Test::new(fun);
   t.test_rec();
+}
+
+fn main() {
+  test(parse_uint8_fastswar, "parse_uint8_fastswar");
+  test(parse_uint8_fastswar_bob, "parse_uint8_fastswar_bob");
 }
